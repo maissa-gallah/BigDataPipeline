@@ -1,13 +1,20 @@
 package com.bigdata.spark.processor;
 
+import static com.datastax.spark.connector.japi.CassandraStreamingJavaUtil.javaFunctions;
+
 import java.util.*;
 import org.apache.spark.SparkConf;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SaveMode;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.*;
 import org.apache.spark.streaming.kafka010.*;
 
 import com.bigdata.spark.entity.Temperature;
 import com.bigdata.spark.util.TemperatureDeserializer;
+import com.datastax.spark.connector.japi.CassandraJavaUtil;
 import com.bigdata.spark.util.PropertyFileReader;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -38,18 +45,18 @@ public class Test {
 
 		JavaInputDStream<ConsumerRecord<String, Temperature>> stream = KafkaUtils.createDirectStream(streamingContext, LocationStrategies.PreferConsistent(), ConsumerStrategies.<String, Temperature> Subscribe(topics, kafkaParams));
 
-		JavaDStream<Temperature> data = stream.map(v -> {
+		JavaDStream<Temperature> dataStream = stream.map(v -> {
 			return v.value();
 		});
 
-		data.print();
-
-		data.foreachRDD(javaRdd -> {
-			List<Temperature> temperatures = javaRdd.collect();
-			for (Temperature t : temperatures) {
-				System.out.println(t.getId() + "   with value " +t.getValue()+ "  dated  "+ t.getTimestamp().toString());
-			}
-		});
+		dataStream.print();
+		
+		// save data to cassandra => stream
+		//ProcessorUtils.saveDataToCassandra(dataStream);
+		
+		// save data to HDFS => batch
+		String saveFile = prop.getProperty("com.iot.app.hdfs") + "iot-data";
+		ProcessorUtils.saveDataToHDFS( dataStream,  saveFile, conf);
 
 		streamingContext.start();
 		streamingContext.awaitTermination();
