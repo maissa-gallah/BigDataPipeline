@@ -1,0 +1,39 @@
+version: "3.3"
+
+
+networks:
+  net:
+
+services:
+
+  zookeeper:
+      image: confluentinc/cp-zookeeper:5.1.0
+      container_name: zookeeper-iot
+      ports:
+        - 2181:2181
+      networks:
+        - net
+      environment:
+        ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+      image: confluentinc/cp-kafka:5.1.0
+      ports:
+        - 9092:9092
+        - 29092:29092
+      depends_on:
+        - zookeeper
+      environment:
+        KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+        KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+        KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.request.logger=WARN"
+        KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+      container_name: kafka-iot
+      networks:
+        - net
+      restart: always
