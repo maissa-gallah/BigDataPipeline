@@ -33,11 +33,6 @@ We used **Lambda architecture** which is a data-processing architecture designed
 
 ### Execution
 
-You can view the dashboard on
-```
-localhost:3000
-```
-
 All component parts are dynamically managed using Docker, which means you don't need to worry about setting up your local environment, the only thing you need is to have Docker installed. Just run 
 
 ```
@@ -47,8 +42,29 @@ docker-compose up
 You must also create the database schema in Cassandra
 
 ```
-docker exec -it cassandra-iot 
+docker exec -it cassandra-iot cqlsh --username cassandra --password cassandra -f /schema.cql
 ```
+
+You must also create the folder to save the data for later batch processing
 ```
-cqlsh --username cassandra --password cassandra -f /schema.cql
+docker exec namenode hdfs dfs -rm -r /lambda-arch
+docker exec namenode hdfs dfs -mkdir /lambda-arch
+docker exec namenode hdfs dfs -mkdir /lambda-arch/checkpoint
+docker exec namenode hdfs dfs -chmod -R 777 /lambda-arch
+docker exec namenode hdfs dfs -chmod -R 777 /lambda-arch/checkpoint
+```
+
+Run the Stream Processor
+```
+docker exec spark-master /spark/bin/spark-submit --class com.bigdata.spark.processor.StreamProcessor --master spark://localhost:7077 /opt/spark-data/bigdata-spark-processor-1.0.0.jar
+```
+
+Run the Batch Processor
+```
+docker exec spark-master /spark/bin/spark-submit --class com.bigdata.spark.processor.BatchProcessor --master spark://localhost:7077 /opt/spark-data/bigdata-spark-processor-1.0.0.jar
+```
+
+You can view the dashboard on
+```
+localhost:3000
 ```

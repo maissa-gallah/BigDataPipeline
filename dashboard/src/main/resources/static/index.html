@@ -119,11 +119,12 @@ p {
 		chart1.draw(dataHumidity, options);
 
 		setInterval(function() {
+			console.log("helloooo", temperature_avg)
 			dataTemperature.setValue(0, 1, temperature_avg);
 			dataHumidity.setValue(0, 1, humidity_avg);
 			chart.draw(dataTemperature, options);
 			chart1.draw(dataHumidity, options);
-		}, 10000);
+		}, 500);
 
 	}
 </script>

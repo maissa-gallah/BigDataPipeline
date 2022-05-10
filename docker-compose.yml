@@ -75,7 +75,7 @@ services:
       - INIT_DAEMON_STEP=false
       - SPARK_DRIVER_HOST=192.168.1.5
     volumes:
-      - ./iot-spark-processor/target:/opt/spark-data
+      - ./spark-processor/target:/opt/spark-data
     networks:
       - net
 
@@ -93,7 +93,6 @@ services:
       - ./data/spark/:/opt/spark-data
     networks:
       - net
-
 
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.1.3-java8
@@ -131,3 +130,5 @@ services:
     ports:
      - 50075:50075
      - 50010:50010
+
+

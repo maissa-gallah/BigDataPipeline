@@ -16,7 +16,7 @@ public class BatchProcessor {
 	
 	public static void main(String[] args) throws Exception {
 
-		String file = "spark-processor-local.properties";
+		String file = "spark-processor.properties";
 		Properties prop = PropertyFileReader.readPropertyFile(file);
 		SparkConf conf = ProcessorUtils.getSparkConf(prop);
 		JavaSparkContext sc = new JavaSparkContext(conf);
