@@ -1,0 +1,265 @@
+
+<html>
+<head>
+<script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="js/sockjs-1.1.1.min.js"></script>
+<script type="text/javascript" src="js/stomp.min.js"></script>
+<script type="text/javascript"
+	src="https://www.gstatic.com/charts/loader.js"></script>
+<style type="text/css">
+h1 {
+	text-align: center;
+}
+
+#chart_div {
+	height: 150px;
+	display: flex;
+	flex-wrap: wrap;
+	align-content: center;
+	margin-left: 640px;
+}
+</style>
+<style>
+* {
+	box-sizing: border-box;
+}
+
+/* Create two equal columns that floats next to each other */
+.column {
+	float: left;
+	width: 50%;
+	padding: 10px;
+}
+</style>
+<script type="text/javascript">
+	google.charts.load('current', {
+		'packages' : [ 'gauge' ]
+	});
+	google.charts.setOnLoadCallback(drawChart);
+
+	var temperature_avg = 20;
+	var humidity_avg = 80;
+
+	var socket = new SockJS('/stomp');
+	var stompClient = Stomp.over(socket);
+	stompClient.connect({}, function(frame) {
+		console.log("connnect");
+		stompClient.subscribe("/topic/average", function(data) {
+			var dataList = data.body;
+			var resp = jQuery.parseJSON(dataList);
+			
+			temperature_avg = resp.temperature;
+			humidity_avg = resp.humidity;
+			
+			console.log("--------",temperature_avg)
+		});
+	})
+
+	function drawChart() {
+
+		var data = google.visualization.arrayToDataTable([
+				[ 'Label', 'Value' ], [ 'Temperature', 20 ],
+				[ 'Humidity', 80 ],
+
+		]);
+
+		var options = {
+			width : 600,
+			height : 180,
+			padding : 500,
+			redFrom : 90,
+			redTo : 100,
+			yellowFrom : 75,
+			yellowTo : 90,
+			minorTicks : 5
+		};
+
+		var chart = new google.visualization.Gauge(document
+				.getElementById('chart_div'));
+
+		chart.draw(data, options);
+
+		setInterval(function() {
+			data.setValue(0, 1, temperature_avg);
+			data.setValue(1, 1, humidity_avg);
+			chart.draw(data, options);
+		}, 10000);
+
+	}
+</script>
+
+<script type="text/javascript"
+	src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+	var temperature = 20;
+	var humidity = 80;
+
+	var socket = new SockJS('/stomp');
+	var stompClient = Stomp.over(socket);
+	stompClient.connect({}, function(frame) {
+		console.log("connnect");
+		//subscribe "/topic/trafficData" message
+		stompClient.subscribe("/topic/data", function(data) {
+			var dataList = data.body;
+			var resp = jQuery.parseJSON(dataList);
+			temperature = resp.temperature;
+			humidity = resp.humidity;
+
+		});
+	})
+
+	function decaler(data, a) {
+		for (let i = 1; i < data.getNumberOfRows(); i++) {
+			data.setValue(i - 1, 1, data.getValue(i, 1));
+		}
+		data.setValue(data.getNumberOfRows() - 1, 1, a);
+		return data;
+	}
+
+	google.charts.load('current', {
+		'packages' : [ 'line' ]
+	});
+	google.charts.setOnLoadCallback(drawChart);
+
+	function drawChart() {
+		console.log("temperature dans draw chart");
+		console.log(temperature);
+
+		var data = new google.visualization.DataTable();
+		data.addColumn('number', '15s');
+		data.addColumn('number', 'cuurent humidity');
+		tab = [ [ 1, 80 ], [ 2, 80 ], [ 3, 80 ], [ 4, 80 ], [ 5, 80 ],
+				[ 6, 80 ], [ 7, 80 ], [ 8, 80 ], [ 9, 80 ], [ 10, 80 ],
+				[ 11, 80 ], [ 12, 80 ], [ 13, 80 ], [ 14, 80 ] ]
+
+		data.addRows(tab);
+
+		var options = {
+			chart : {
+				title : 'cuurent humidity',
+				subtitle : 'in celsius degree'
+			},
+			width : 600,
+			height : 450,
+			axes : {
+				x : {
+					0 : {
+						side : 'top'
+					}
+				}
+			}
+		};
+
+		var chart = new google.charts.Line(document
+				.getElementById('line_top_humidity'));
+
+		chart.draw(data, google.charts.Line.convertOptions(options));
+
+		setInterval(function() {
+
+			data = decaler(data, humidity)
+			chart.draw(data, google.charts.Line.convertOptions(options));
+		}, 10000);
+
+	}
+	google.charts.load('current', {
+		'packages' : [ 'line' ]
+	});
+	google.charts.setOnLoadCallback(drawChart);
+</script>
+<script type="text/javascript"
+	src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+	var temperature = 20;
+	var humidity = 80;
+
+	console.log("button");
+	var socket = new SockJS('/stomp');
+	var stompClient = Stomp.over(socket);
+	stompClient.connect({}, function(frame) {
+		console.log("connnect");
+		//subscribe "/topic/trafficData" message
+		stompClient.subscribe("/topic/data", function(data) {
+			var dataList = data.body;
+			var resp = jQuery.parseJSON(dataList);
+			temperature = resp.temperature;
+			humidity = resp.humidity;
+
+		});
+	})
+
+	function decaler(data, a) {
+		for (let i = 1; i < data.getNumberOfRows(); i++) {
+			data.setValue(i - 1, 1, data.getValue(i, 1));
+		}
+		data.setValue(data.getNumberOfRows() - 1, 1, a);
+		return data;
+	}
+
+	function drawChart() {
+		console.log("temperature dans draw chart");
+		console.log(temperature);
+
+		var data = new google.visualization.DataTable();
+		data.addColumn('number', '15s');
+		data.addColumn('number', 'cuurent temperature');
+		tab = [ [ 1, 20 ], [ 2, 20 ], [ 3, 20 ], [ 4, 20 ], [ 5, 20 ],
+				[ 6, 20 ], [ 7, 20 ], [ 8, 20 ], [ 9, 20 ], [ 10, 20 ],
+				[ 11, 20 ], [ 12, 20 ], [ 13, 20 ], [ 14, 20 ] ]
+
+		data.addRows(tab);
+
+		var options = {
+			chart : {
+				title : 'cuurent temperature',
+				subtitle : 'in celsius degree'
+			},
+			width : 600,
+			height : 450,
+			axes : {
+				x : {
+					0 : {
+						side : 'top'
+					}
+				}
+			}
+		};
+
+		var chart = new google.charts.Line(document
+				.getElementById('line_top_temperature'));
+
+		chart.draw(data, google.charts.Line.convertOptions(options));
+
+		setInterval(function() {
+			console.log("temperature dans set interrr");
+			//console.log(temperature)
+			data = decaler(data, temperature)
+			chart.draw(data, google.charts.Line.convertOptions(options));
+		}, 10000);
+
+	}
+	google.charts.load('current', {
+		'packages' : [ 'line' ]
+	});
+	google.charts.setOnLoadCallback(drawChart);
+</script>
+</head>
+<body>
+	<br />
+
+
+
+	<div class="row">
+		<div class="column">
+			<div id="line_top_temperature"></div>
+		</div>
+		<div class="column">
+			<div id="line_top_humidity"></div>
+		</div>
+	</div>
+	<h1>Average Values</h1>
+	<div id="chart_div"></div>
+
+
+</body>
+</html>

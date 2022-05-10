@@ -5,3 +5,5 @@ CREATE KEYSPACE IF NOT EXISTS sensordatakeyspace WITH replication = {'class':'Si
 CREATE TABLE sensordatakeyspace.temperature (id text , timeStamp timestamp, value double, PRIMARY KEY (id));
 
 CREATE TABLE sensordatakeyspace.humidity (id text , timeStamp timestamp, value double, PRIMARY KEY (id));
+
+CREATE TABLE sensordatakeyspace.averagedata (id text , temperature double, humidity double, PRIMARY KEY (id));

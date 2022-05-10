@@ -2,15 +2,19 @@ package com.bigdata.spark.processor;
 
 import java.util.*;
 import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.*;
 import org.apache.spark.streaming.kafka010.*;
 
+import com.bigdata.spark.entity.AverageData;
 import com.bigdata.spark.entity.Humidity;
 import com.bigdata.spark.entity.SensorData;
 import com.bigdata.spark.entity.Temperature;
 import com.bigdata.spark.util.SensorDataDeserializer;
-
 
 import com.bigdata.spark.util.PropertyFileReader;
 
@@ -18,7 +22,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
-public class Test {
+public class StreamProcessor {
 
 	public static void main(String[] args) throws Exception {
 
@@ -28,6 +32,8 @@ public class Test {
 		SparkConf conf = ProcessorUtils.getSparkConf(prop);
 
 		JavaStreamingContext streamingContext = new JavaStreamingContext(conf, Durations.seconds(10));
+		JavaSparkContext sc = streamingContext.sparkContext();
+
 		streamingContext.checkpoint(prop.getProperty("com.iot.app.spark.checkpoint.dir"));
 
 		Map<String, Object> kafkaParams = new HashMap<>();
@@ -49,35 +55,32 @@ public class Test {
 		});
 
 		sensordataStream.print();
-		
+
 		JavaDStream<Temperature> temperatureStream = sensordataStream.map(v -> {
-			return new Temperature(v.getId(),v.getTemperature(),v.getTimestamp());
+			return new Temperature(v.getId(), v.getTemperature(), v.getTimestamp());
 		});
 		temperatureStream.print();
-		
+
 		JavaDStream<Humidity> humidityStream = sensordataStream.map(v -> {
-			return new Humidity(v.getId(),v.getHumidity(),v.getTimestamp());
+			return new Humidity(v.getId(), v.getHumidity(), v.getTimestamp());
 		});
 
 		// save data to cassandra => stream
-		 ProcessorUtils.saveTemperatureToCassandra(temperatureStream);
-		 
-		 ProcessorUtils.saveHumidityToCassandra(humidityStream);
+		ProcessorUtils.saveTemperatureToCassandra(temperatureStream);
 
-		/*
+		ProcessorUtils.saveHumidityToCassandra(humidityStream);
+		
+		
+
+		// batch process
 		// save data to HDFS => batch
 		SparkSession sparkSession = SparkSession.builder().config(conf).getOrCreate();
 		String saveFile = prop.getProperty("com.iot.app.hdfs") + "iot-data";
 		ProcessorUtils.saveDataToHDFS(sensordataStream, saveFile, sparkSession);
 
-		// todo batch process
-		var dataFrame = sparkSession.read().json(saveFile);
-		JavaRDD<Temperature> rdd = dataFrame.javaRDD().map(row -> ProcessorUtils.transformData(row));
+		// sparkSession.close();
+		// sparkSession.stop();
 
-		sparkSession.close();
-		sparkSession.stop();
-		*/
-		
 		streamingContext.start();
 		streamingContext.awaitTermination();
 
