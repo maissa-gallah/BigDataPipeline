@@ -6,13 +6,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import kafka.serializer.Encoder;
 import kafka.utils.VerifiableProperties;
 
-public class TemperatureEncoder implements Encoder<Temperature> {
+public class SensorDataEncoder implements Encoder<SensorData> {
 		
 	private static ObjectMapper objectMapper = new ObjectMapper();		
-	public TemperatureEncoder(VerifiableProperties verifiableProperties) {
+	public SensorDataEncoder(VerifiableProperties verifiableProperties) {
 
     }
-	public byte[] toBytes(Temperature event) {
+	public byte[] toBytes(SensorData event) {
 		try {
 			String msg = objectMapper.writeValueAsString(event);
 			System.out.println(msg);

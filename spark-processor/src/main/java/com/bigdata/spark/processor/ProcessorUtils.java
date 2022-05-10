@@ -7,6 +7,8 @@ import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.api.java.JavaDStream;
 
+import com.bigdata.spark.entity.Humidity;
+import com.bigdata.spark.entity.SensorData;
 import com.bigdata.spark.entity.Temperature;
 import com.datastax.spark.connector.japi.CassandraJavaUtil;
 
@@ -32,7 +34,7 @@ class ProcessorUtils {
 		return sparkConf;
 	}
 
-	public static void saveDataToCassandra(final JavaDStream<Temperature> dataStream) {
+	public static void saveTemperatureToCassandra(final JavaDStream<Temperature> dataStream) {
 		System.out.println("Saving to cassandra...");
 
 		// Map Cassandra table column
@@ -42,23 +44,41 @@ class ProcessorUtils {
 		columnNameMappings.put("value", "value");
 
 		// call CassandraStreamingJavaUtil function to save in DB
-		javaFunctions(dataStream).writerBuilder("temperaturekeyspace", "temperature",
+		javaFunctions(dataStream).writerBuilder("sensordatakeyspace", "temperature",
 				CassandraJavaUtil.mapToRow(Temperature.class, columnNameMappings)).saveToCassandra();
 	}
+	
+	public static void saveHumidityToCassandra(final JavaDStream<Humidity> dataStream) {
+		System.out.println("Saving to cassandra...");
 
-	public static void saveDataToHDFS(final JavaDStream<Temperature> dataStream, String saveFile, SparkConf conf) {
+		// Map Cassandra table column
+		HashMap<String, String> columnNameMappings = new HashMap<>();
+		columnNameMappings.put("id", "id");
+		columnNameMappings.put("timestamp", "timestamp");
+		columnNameMappings.put("value", "value");
+
+		// call CassandraStreamingJavaUtil function to save in DB
+		javaFunctions(dataStream).writerBuilder("sensordatakeyspace", "humidity",
+				CassandraJavaUtil.mapToRow(Humidity.class, columnNameMappings)).saveToCassandra();
+	}
+
+	public static void saveDataToHDFS(final JavaDStream<SensorData> dataStream, String saveFile, SparkSession sql) {
 		System.out.println("Saving to hdfs...");
 
-		SparkSession sql = SparkSession.builder().config(conf).getOrCreate();
 		dataStream.foreachRDD(rdd -> {
 			if (rdd.isEmpty()) {
 				return;
 			}
 			Dataset<Row> dataFrame = sql.createDataFrame(rdd, Temperature.class);
-			Dataset<Row> dfStore = dataFrame.selectExpr("id", "value", "timestamp");
+
+			Dataset<Row> dfStore = dataFrame.selectExpr("id", "temperature", "humidity", "timestamp");
 			dfStore.printSchema();
 			dfStore.write().mode(SaveMode.Append).json(saveFile);
 		});
+	}
+
+	public static Temperature transformData(Row row) {
+		return new Temperature(row.getString(0), row.getDouble(1), row.getDate(2));
 	}
 
 }

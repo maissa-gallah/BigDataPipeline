@@ -1,22 +1,22 @@
-package com.bigdata.kafka;
+package com.bigdata.spark.entity;
 
 import java.io.Serializable;
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
-public class Temperature implements Serializable{
-	
+public class Humidity implements Serializable {
+
 	private String id;
 	private double value;
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone="MST")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "MST")
 	private Date timestamp;
-	
-	public Temperature(){
-		
+
+	public Humidity() {
+
 	}
 
-	public Temperature(String id, double value, Date timestamp) {
+	public Humidity(String id, double value, Date timestamp) {
 		super();
 		this.id = id;
 		this.value = value;
@@ -34,6 +34,5 @@ public class Temperature implements Serializable{
 	public Date getTimestamp() {
 		return timestamp;
 	}
-
 
 }

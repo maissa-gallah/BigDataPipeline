@@ -9,39 +9,41 @@ import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 
-public class TemperatureProducer {
+public class SensorDataProducer {
 
-	private final Producer<String, Temperature> producer;
+	private final Producer<String, SensorData> producer;
 
-	public TemperatureProducer(final Producer<String, Temperature> producer) {
+	public SensorDataProducer(final Producer<String, SensorData> producer) {
 		this.producer = producer;
 	}
 
 	public static void main(String[] args) throws Exception {
 		Properties properties = PropertyFileReader.readPropertyFile();
-		Producer<String, Temperature> producer = new Producer<>(new ProducerConfig(properties));
-		TemperatureProducer iotProducer = new TemperatureProducer(producer);
+		Producer<String, SensorData> producer = new Producer<>(new ProducerConfig(properties));
+		SensorDataProducer iotProducer = new SensorDataProducer(producer);
 		iotProducer.generateIoTEvent(properties.getProperty("kafka.topic"));
 	}
 
 	private void generateIoTEvent(String topic) throws InterruptedException {
 		Random rand = new Random();
-		double init_val = 20;
+		double init_val_temp = 20;
+		double init_val_hum = 80;
 		System.out.println("Sending events");
 
 		while (true) {
-			Temperature event = generateTemperature(rand , init_val );
+			SensorData event = generateSensorData(rand, init_val_temp, init_val_hum);
 			producer.send(new KeyedMessage<>(topic, event));
 			Thread.sleep(rand.nextInt(5000 - 2000) + 2000); // random delay of 2 to 5 seconds
 		}
 	}
 
-	private Temperature generateTemperature(final Random rand, double val) {
+	private SensorData generateSensorData(final Random rand, double temp, double hum) {
 		String id = UUID.randomUUID().toString();
 		Date timestamp = new Date();
-		double value = val+ rand.nextDouble() * 10;
-		
-		Temperature temp = new Temperature(id, value, timestamp);
-		return temp;
+		double t = temp + rand.nextDouble() * 10;
+		double h = hum + rand.nextDouble() * 10;
+
+		SensorData data = new SensorData(id, t, h, timestamp);
+		return data;
 	}
 }

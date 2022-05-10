@@ -1,20 +1,17 @@
 package com.bigdata.spark.processor;
 
-import static com.datastax.spark.connector.japi.CassandraStreamingJavaUtil.javaFunctions;
-
 import java.util.*;
 import org.apache.spark.SparkConf;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SaveMode;
-import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.*;
 import org.apache.spark.streaming.kafka010.*;
 
+import com.bigdata.spark.entity.Humidity;
+import com.bigdata.spark.entity.SensorData;
 import com.bigdata.spark.entity.Temperature;
-import com.bigdata.spark.util.TemperatureDeserializer;
-import com.datastax.spark.connector.japi.CassandraJavaUtil;
+import com.bigdata.spark.util.SensorDataDeserializer;
+
+
 import com.bigdata.spark.util.PropertyFileReader;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -36,28 +33,51 @@ public class Test {
 		Map<String, Object> kafkaParams = new HashMap<>();
 		kafkaParams.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, prop.getProperty("com.iot.app.kafka.brokerlist"));
 		kafkaParams.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		kafkaParams.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, TemperatureDeserializer.class);
+		kafkaParams.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, SensorDataDeserializer.class);
 		kafkaParams.put(ConsumerConfig.GROUP_ID_CONFIG, prop.getProperty("com.iot.app.kafka.topic"));
 		kafkaParams.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, prop.getProperty("com.iot.app.kafka.resetType"));
 		kafkaParams.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 
-		Collection<String> topics = Arrays.asList("temperature-data-event");
+		Collection<String> topics = Arrays.asList(prop.getProperty("com.iot.app.kafka.topic"));
 
-		JavaInputDStream<ConsumerRecord<String, Temperature>> stream = KafkaUtils.createDirectStream(streamingContext, LocationStrategies.PreferConsistent(), ConsumerStrategies.<String, Temperature> Subscribe(topics, kafkaParams));
+		JavaInputDStream<ConsumerRecord<String, SensorData>> stream = KafkaUtils.createDirectStream(streamingContext,
+				LocationStrategies.PreferConsistent(),
+				ConsumerStrategies.<String, SensorData>Subscribe(topics, kafkaParams));
 
-		JavaDStream<Temperature> dataStream = stream.map(v -> {
+		JavaDStream<SensorData> sensordataStream = stream.map(v -> {
 			return v.value();
 		});
 
-		dataStream.print();
+		sensordataStream.print();
 		
-		// save data to cassandra => stream
-		//ProcessorUtils.saveDataToCassandra(dataStream);
+		JavaDStream<Temperature> temperatureStream = sensordataStream.map(v -> {
+			return new Temperature(v.getId(),v.getTemperature(),v.getTimestamp());
+		});
+		temperatureStream.print();
 		
-		// save data to HDFS => batch
-		String saveFile = prop.getProperty("com.iot.app.hdfs") + "iot-data";
-		ProcessorUtils.saveDataToHDFS( dataStream,  saveFile, conf);
+		JavaDStream<Humidity> humidityStream = sensordataStream.map(v -> {
+			return new Humidity(v.getId(),v.getHumidity(),v.getTimestamp());
+		});
 
+		// save data to cassandra => stream
+		 ProcessorUtils.saveTemperatureToCassandra(temperatureStream);
+		 
+		 ProcessorUtils.saveHumidityToCassandra(humidityStream);
+
+		/*
+		// save data to HDFS => batch
+		SparkSession sparkSession = SparkSession.builder().config(conf).getOrCreate();
+		String saveFile = prop.getProperty("com.iot.app.hdfs") + "iot-data";
+		ProcessorUtils.saveDataToHDFS(sensordataStream, saveFile, sparkSession);
+
+		// todo batch process
+		var dataFrame = sparkSession.read().json(saveFile);
+		JavaRDD<Temperature> rdd = dataFrame.javaRDD().map(row -> ProcessorUtils.transformData(row));
+
+		sparkSession.close();
+		sparkSession.stop();
+		*/
+		
 		streamingContext.start();
 		streamingContext.awaitTermination();
 
