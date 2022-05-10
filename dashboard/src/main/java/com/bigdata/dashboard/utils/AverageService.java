@@ -33,8 +33,10 @@ public class AverageService {
 		System.out.println(data);
 
 		double temperature = data.getTemperature();
-		double humidity = data.getHumidity();
+		System.out.println(temperature);
 
+		double humidity = data.getHumidity();
+		System.out.println(humidity);
 		// prepare response
 		Response response = new Response();
 		response.setHumidity(humidity);

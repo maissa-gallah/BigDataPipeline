@@ -6,36 +6,67 @@
 <script type="text/javascript" src="js/stomp.min.js"></script>
 <script type="text/javascript"
 	src="https://www.gstatic.com/charts/loader.js"></script>
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css"
+	integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+	crossorigin="anonymous">
 <style type="text/css">
 h1 {
 	text-align: center;
 }
 
-#chart_div {
-	height: 150px;
-	display: flex;
-	flex-wrap: wrap;
-	align-content: center;
-	margin-left: 640px;
+.title {
+	margin-left: 20px;
 }
-</style>
-<style>
+
+.container2 {
+	background-color: #f8f9fa;
+}
+
+.container3 {
+	margin: 0px 50px 20px 50px;
+	height: 50%;
+}
+
+#chart_div_temperature {
+	display: flex;
+	justify-content: center;
+}
+
+#chart_div_humitidy {
+	display: flex;
+	justify-content: center;
+}
+
 * {
 	box-sizing: border-box;
 }
 
+p {
+	color: #757575;
+}
+
 /* Create two equal columns that floats next to each other */
 .column {
-	float: left;
+	float: center;
 	width: 50%;
-	padding: 10px;
+	padding: 0px 40px 20px 40px;
+}
+
+.row {
+	height: 10%;
+	margin-top: 20px;
 }
 </style>
+
+<script type="text/javascript"
+	src="https://www.gstatic.com/charts/loader.js"></script>
+
 <script type="text/javascript">
 	google.charts.load('current', {
 		'packages' : [ 'gauge' ]
 	});
-	google.charts.setOnLoadCallback(drawChart);
+	google.charts.setOnLoadCallback(drawChartTemperature);
 
 	var temperature_avg = 20;
 	var humidity_avg = 80;
@@ -47,19 +78,22 @@ h1 {
 		stompClient.subscribe("/topic/average", function(data) {
 			var dataList = data.body;
 			var resp = jQuery.parseJSON(dataList);
-			
+
 			temperature_avg = resp.temperature;
 			humidity_avg = resp.humidity;
-			
-			console.log("--------",temperature_avg)
+
+			console.log("--------", temperature_avg)
 		});
 	})
 
-	function drawChart() {
+	function drawChartTemperature() {
 
-		var data = google.visualization.arrayToDataTable([
-				[ 'Label', 'Value' ], [ 'Temperature', 20 ],
-				[ 'Humidity', 80 ],
+		var dataTemperature = google.visualization.arrayToDataTable([
+				[ 'Label', 'Value' ], [ 'Temperature', 20 ]
+
+		]);
+		var dataHumidity = google.visualization.arrayToDataTable([
+				[ 'Label', 'Value' ], [ 'Humidity', 80 ]
 
 		]);
 
@@ -75,21 +109,25 @@ h1 {
 		};
 
 		var chart = new google.visualization.Gauge(document
-				.getElementById('chart_div'));
+				.getElementById('chart_div_temperature'));
 
-		chart.draw(data, options);
+		chart.draw(dataTemperature, options);
+
+		var chart1 = new google.visualization.Gauge(document
+				.getElementById('chart_div_humitidy'));
+
+		chart1.draw(dataHumidity, options);
 
 		setInterval(function() {
-			data.setValue(0, 1, temperature_avg);
-			data.setValue(1, 1, humidity_avg);
-			chart.draw(data, options);
+			dataTemperature.setValue(0, 1, temperature_avg);
+			dataHumidity.setValue(0, 1, humidity_avg);
+			chart.draw(dataTemperature, options);
+			chart1.draw(dataHumidity, options);
 		}, 10000);
 
 	}
 </script>
 
-<script type="text/javascript"
-	src="https://www.gstatic.com/charts/loader.js"></script>
 <script type="text/javascript">
 	var temperature = 20;
 	var humidity = 80;
@@ -119,6 +157,7 @@ h1 {
 	google.charts.load('current', {
 		'packages' : [ 'line' ]
 	});
+
 	google.charts.setOnLoadCallback(drawChart);
 
 	function drawChart() {
@@ -127,7 +166,7 @@ h1 {
 
 		var data = new google.visualization.DataTable();
 		data.addColumn('number', '15s');
-		data.addColumn('number', 'cuurent humidity');
+		data.addColumn('number', 'Humidity');
 		tab = [ [ 1, 80 ], [ 2, 80 ], [ 3, 80 ], [ 4, 80 ], [ 5, 80 ],
 				[ 6, 80 ], [ 7, 80 ], [ 8, 80 ], [ 9, 80 ], [ 10, 80 ],
 				[ 11, 80 ], [ 12, 80 ], [ 13, 80 ], [ 14, 80 ] ]
@@ -136,11 +175,11 @@ h1 {
 
 		var options = {
 			chart : {
-				title : 'cuurent humidity',
-				subtitle : 'in celsius degree'
+				title : 'Current humidity',
+				legend : 'none',
 			},
 			width : 600,
-			height : 450,
+			height : 225,
 			axes : {
 				x : {
 					0 : {
@@ -202,7 +241,7 @@ h1 {
 
 		var data = new google.visualization.DataTable();
 		data.addColumn('number', '15s');
-		data.addColumn('number', 'cuurent temperature');
+		data.addColumn('number', 'Temperature');
 		tab = [ [ 1, 20 ], [ 2, 20 ], [ 3, 20 ], [ 4, 20 ], [ 5, 20 ],
 				[ 6, 20 ], [ 7, 20 ], [ 8, 20 ], [ 9, 20 ], [ 10, 20 ],
 				[ 11, 20 ], [ 12, 20 ], [ 13, 20 ], [ 14, 20 ] ]
@@ -211,11 +250,10 @@ h1 {
 
 		var options = {
 			chart : {
-				title : 'cuurent temperature',
-				subtitle : 'in celsius degree'
+				title : 'Current Temperature'
 			},
 			width : 600,
-			height : 450,
+			height : 225,
 			axes : {
 				x : {
 					0 : {
@@ -245,21 +283,53 @@ h1 {
 </script>
 </head>
 <body>
-	<br />
+<br/>
+	<nav class="navbar navbar-expand-lg navbar-light">
+		<a class="navbar-brand">
+			<h1>Big Data Pipeline</h1>
+		</a>
+	</nav>
+	<div class="container3">
+		<div class="card container2">
+			<div class="row">
+				<div class="column">
+					<div class="card">
+						<div class="card-body">
+							<div id="line_top_temperature"></div>
+						</div>
+					</div>
 
+				</div>
+				<div class="column">
+					<div class="card">
+						<div class="card-body">
+							<div id="line_top_humidity"></div>
+						</div>
+					</div>
 
+				</div>
+			</div>
+			<div class="row">
+				<div class="column">
+					<div class="card">
+						<div class="card-body">
+							<p>Average Temperature</p>
+							<div id="chart_div_temperature"></div>
+						</div>
+					</div>
+				</div>
 
-	<div class="row">
-		<div class="column">
-			<div id="line_top_temperature"></div>
-		</div>
-		<div class="column">
-			<div id="line_top_humidity"></div>
+				<div class="column">
+					<div class="card">
+						<div class="card-body">
+							<p>Average Humidity</p>
+							<div id="chart_div_humitidy"></div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
-	<h1>Average Values</h1>
-	<div id="chart_div"></div>
-
 
 </body>
 </html>
